@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="太陽を動かして、青い空と赤い夕空を光の散乱から探る物理シミュレーション。">
+  <title>空の色と光の散乱</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=20261016-navigation">
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div><p class="eyebrow">LIGHT & ATMOSPHERE</p><h1>空の色と光の散乱</h1></div>
+      <button id="help" class="icon-button" aria-label="使い方とモデルについて" aria-expanded="false" aria-controls="help-panel">?</button>
+    </header>
+    <section class="simulation" aria-label="光の散乱シミュレーション">
+      <div class="scene-heading"><span class="live-dot"></span><span id="time-label">日中</span><span class="drag-hint">太陽をドラッグ／余白でパン</span></div>
+      <canvas id="scene" aria-label="光の散乱。太陽をドラッグして移動。余白をドラッグしてパン、2本指のピンチまたはホイールでズームできます。"></canvas>
+      <button id="sun-handle" aria-label="太陽。左右の矢印キーでも移動できます" aria-describedby="sun-instruction"></button>
+      <span id="sun-instruction" class="sr-only">ドラッグで地球と同心円の軌道上を移動します。矢印キーでも移動でき、Homeキーで頭上に戻せます。</span>
+      <aside id="observer-view" class="observer-view" aria-labelledby="observer-view-title" hidden>
+        <div class="observer-view-heading"><h2 id="observer-view-title"><span class="observer-prefix">観測者の</span>見え方</h2><button id="close-view" class="icon-button" aria-label="見え方を非表示にする">×</button></div>
+        <canvas id="sky" width="300" height="144" aria-label="観測者から見た太陽側の空の模式図"></canvas>
+      </aside>
+      <div class="scene-legend" aria-label="散乱しやすさ"><span>散乱しやすさ</span><span class="red">赤</span><span class="less">&lt;</span><span class="green">緑</span><span class="less">&lt;</span><span class="blue">青</span></div>
+    </section>
+    <section class="dashboard">
+      <div class="observation">
+        <div class="observation-head"><span>観測者に届く光</span><div class="view-tabs" role="group" aria-label="調べる光"><button id="sky-mode" aria-pressed="true" class="selected">太陽側の空</button><button id="direct-mode" aria-pressed="false">太陽の光</button></div></div>
+        <div class="observation-body"><button id="toggle-view" class="view-toggle" aria-expanded="false" aria-controls="observer-view">見え方を表示</button><div class="camera-controls" role="group" aria-label="図の拡大縮小と移動"><button id="zoom-out" aria-label="縮小">−</button><output id="zoom-level" aria-label="表示倍率">100%</output><button id="zoom-in" aria-label="拡大">＋</button><button id="reset-camera">表示を戻す</button></div></div>
+      </div>
+    </section>
+    <footer><span id="path-label">大気を通る距離 <b>1.0 倍</b></span><span>大気・光の粒は見やすく強調</span></footer>
+    <aside id="help-panel" hidden><div class="help-heading"><h2>太陽を動かして、空の色を比べよう</h2><button id="close-help" class="icon-button" aria-label="説明を閉じる">×</button></div><p>余白を1本指でドラッグするとパン、2本指のピンチでズームできます。マウスはドラッグとホイール、下のボタンでも操作できます。「表示を戻す」で倍率と移動だけを戻します。</p><p>青い光は赤い光より散乱されやすく、日中は散乱した青い光が空から届きます。夕方は大気中を通る道のりが長くなり、太陽の方向から届く光は赤みを帯びます。</p><p>見え方の「太陽側の空」は散乱した光を含む空、「太陽の光」は散乱せず直接届く太陽光の模式図です。</p><p class="model-note">レイリー散乱の波長依存性（1/λ⁴）を使った2次元・一様大気の定性的モデルです。空の色は単一散乱から計算し、多重散乱・雲・ちり・屈折や実際の色覚は省略しています。太陽・地球・大気の縮尺、光の速度は実際と異なります。</p><a href="https://spaceplace.nasa.gov/blue-sky/en/" target="_blank" rel="noopener noreferrer">参考：NASA — Why Is the Sky Blue? ↗</a></aside>
+  </main>
+  <script type="module" src="./app.js?v=20261016-navigation"></script>
+</body>
+</html>
