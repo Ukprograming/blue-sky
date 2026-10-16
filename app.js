@@ -124,7 +124,7 @@ function emit() {
 }
 
 function simulate(dt) {
-  const g=geometry, speed=0.4;
+  const g=geometry, speed=0.2;
   const topLeft = screenToWorld(camera, { x: 0, y: 0 });
   const bottomRight = screenToWorld(camera, { x: g.w, y: g.h });
   const bounds = { left: Math.min(0, topLeft.x)-20, top: Math.min(0, topLeft.y)-20,
