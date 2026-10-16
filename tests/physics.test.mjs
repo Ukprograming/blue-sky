@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SHELL_HEIGHT, OPTICAL_DEPTH, atmosphereLength, sunGeometry, directLight, skyLight, relativeRGB, scatterProbability } from '../physics.mjs';
+import { SHELL_HEIGHT, OPTICAL_DEPTH, atmosphereLength, sunGeometry, directLight, skyLight, relativeRGB, scatterProbability, particleScatterProbability } from '../physics.mjs';
 
 const orbit = Math.hypot(.24, .44) / .24;
 test('頭上は大気の厚さ1枚、地平線では経路が長くなる',()=>{
@@ -22,6 +22,17 @@ test('青ほど散乱しやすく、移動距離とともに散乱確率が増�
   assert.ok(OPTICAL_DEPTH[2]>OPTICAL_DEPTH[1]&&OPTICAL_DEPTH[1]>OPTICAL_DEPTH[0]);
   for(const c of [0,1,2]){assert.equal(scatterProbability(c,0),0);assert.ok(scatterProbability(c,.08)>scatterProbability(c,.02));}
   assert.ok(scatterProbability(2,.05)>scatterProbability(0,.05));
+});
+test('粒の散乱は赤と青の差を強調し、確率の範囲を維持',()=>{
+  const distance=.01;
+  const physicalRatio=scatterProbability(2,distance)/scatterProbability(0,distance);
+  const visualRatio=particleScatterProbability(2,distance)/particleScatterProbability(0,distance);
+  assert.ok(visualRatio>physicalRatio*3);
+  assert.ok(particleScatterProbability(0,distance)<scatterProbability(0,distance));
+  assert.ok(particleScatterProbability(2,distance)>scatterProbability(2,distance));
+  for(const color of [0,1,2])for(const d of [0,.01,.1,1,10]){
+    const p=particleScatterProbability(color,d);assert.ok(Number.isFinite(p)&&p>=0&&p<=1);
+  }
 });
 test('日中の散乱光は青く、夕方の太陽側の空と直接光は赤くなる',()=>{
   const noon=sunGeometry(0,orbit),sunset=sunGeometry(98,orbit);

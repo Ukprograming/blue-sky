@@ -13,6 +13,8 @@ async (page) => {
   await page.setViewportSize({width:1024,height:768});await settle(page);
   await reset(page);await page.locator('#sun-handle').focus();await page.keyboard.press('Home');await settle(page);
   check(await page.locator('.readings,.bar-row,#red-value,#green-value,#blue-value').count()===0,'RGBの割合表示を削除');
+  check(await page.locator('.view-tabs,.dashboard,footer,.eyebrow').count()===0,'光の切り替え・下部パネル・フッター・英語上段を削除');
+  check(await page.locator('header #toggle-view,header .camera-controls').count()===2,'操作をヘッダーに移動');
   check(await page.locator('#observer-view').isHidden(),'見え方は初期非表示');
   check(await page.locator('#scene').evaluate(e=>getComputedStyle(e).touchAction)==='none','キャンバスのネイティブジェスチャー抑制');
   const base=await point(page),scene=await page.locator('#scene').boundingBox();
@@ -50,8 +52,9 @@ async (page) => {
   await page.locator('#toggle-view').click();
   const overlayBefore=await page.locator('#observer-view').boundingBox();
   const skyBefore=await page.locator('#sky').evaluate(c=>c.toDataURL());
-  await page.locator('#direct-mode').click();
-  check(skyBefore!==await page.locator('#sky').evaluate(c=>c.toDataURL()),'割合表示を消しても見え方のモード切り替えが動く');
+  await page.locator('#sun-handle').focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');
+  check(skyBefore!==await page.locator('#sky').evaluate(c=>c.toDataURL()),'太陽を動かすと見え方が連動する');
+  await page.keyboard.press('Home');
   await page.locator('#zoom-in').click();await settle(page);
   const overlayAfter=await page.locator('#observer-view').boundingBox();
   check(near(overlayBefore,overlayAfter)&&overlayBefore.width===overlayAfter.width,'オーバーレイはズームに巻き込まれない');
@@ -65,7 +68,8 @@ async (page) => {
     const session=await context.newCDPSession(touch);
     const send=(type,points)=>session.send('Input.dispatchTouchEvent',{type,touchPoints:points.map((p,i)=>({id:p.id??i+1,x:p.x,y:p.y,radiusX:2,radiusY:2,force:1}))});
     const box=await touch.locator('#scene').boundingBox(),initial=await point(touch);
-    const half=Math.min(65,box.width*.17),m={x:box.x+box.width*.5,y:box.y+box.height*.47};
+    check(box.height>height*.6&&box.y+box.height<=height+1,`${name}: キャンバスを縦に広げて画面内に収める`);
+    const half=Math.min(65,box.width*.17),m={x:box.x+box.width*.5,y:box.y+box.height*.6};
     const starts=[{x:m.x-half,y:m.y,id:1},{x:m.x+half,y:m.y,id:2}];
     const shift={x:20,y:12},ends=starts.map(p=>({x:m.x+shift.x+(p.x-m.x)*1.6,y:m.y+shift.y,id:p.id}));
     await send('touchStart',starts);

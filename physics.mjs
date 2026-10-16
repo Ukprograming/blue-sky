@@ -4,6 +4,9 @@ export const WAVELENGTHS = [650, 530, 450];
 export const COLORS = ['#ff625d', '#68ed9d', '#6b9fff'];
 export const OPTICAL_DEPTH = WAVELENGTHS.map(w => 0.30 * (650 / w) ** 4);
 export const SHELL_HEIGHT = 0.34;
+// Amplify particle direction changes for teaching; the sky model below keeps
+// the wavelength-dependent coefficients without these visual multipliers.
+export const PARTICLE_SCATTER_GAIN = [0.45, 1, 1.5];
 
 export function circleInterval(x, y, dx, dy, radius) {
   const b = x * dx + y * dy;
@@ -82,4 +85,8 @@ export function scatterAngle(random = Math.random) {
 
 export function scatterProbability(color, atmosphericDistance) {
   return -Math.expm1(-OPTICAL_DEPTH[color] * atmosphericDistance / SHELL_HEIGHT);
+}
+
+export function particleScatterProbability(color, atmosphericDistance) {
+  return scatterProbability(color, atmosphericDistance * PARTICLE_SCATTER_GAIN[color]);
 }

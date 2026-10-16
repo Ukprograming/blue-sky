@@ -1,11 +1,11 @@
-import { COLORS, SHELL_HEIGHT, circleInterval, sunGeometry, directLight, skyLight, scatterAngle, scatterProbability } from './physics.mjs';
+import { COLORS, SHELL_HEIGHT, circleInterval, sunGeometry, directLight, skyLight, scatterAngle, particleScatterProbability } from './physics.mjs?v=20261016-header';
 import { MIN_ZOOM, MAX_ZOOM, worldToScreen, screenToWorld, zoomAt, installNavigation } from './navigation.mjs';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), ctx = canvas.getContext('2d');
 const skyCanvas = $('sky'), skyCtx = skyCanvas.getContext('2d');
 const background = document.createElement('canvas'), bg = background.getContext('2d');
-const state = { position: 0, mode: 'sky', viewVisible: false, particles: [], sparks: [], emission: 0 };
+const state = { position: 0, viewVisible: false, particles: [], sparks: [], emission: 0 };
 const camera = { x: 0, y: 0, zoom: 1 };
 let navigation, cameraDirty = false;
 let geometry, sun, lastTime = 0, animation, skySamples = [];
@@ -40,9 +40,6 @@ function updateSun() {
   syncSunHandle();
   $('sun-handle').setAttribute('aria-label', `太陽、高度${Math.round(sun.altitude * 180 / Math.PI)}度。左右の矢印キーでも移動できます`);
   $('time-label').textContent = sun.altitude < 0.2 ? '夕方・日の出ごろ' : sun.altitude < 0.6 ? '太陽が低いとき' : '日中';
-  const direct = directLight(sun);
-  $('path-label').innerHTML = `大気を通る距離 <b>${(direct.length / SHELL_HEIGHT).toFixed(1)} 倍</b>`;
-  // The near-Sun sky is sampled just above the disk; the disk is excluded.
   skySamples = Array.from({ length: 32 }, (_, i) => {
     const e = 0.025 + i / 31 * Math.PI / 2;
     return skyLight(sun, e, Math.sign(sun.x) || 1);
@@ -63,9 +60,9 @@ function drawBackground() {
   bg.save(); bg.translate(camera.x, camera.y); bg.scale(camera.zoom, camera.zoom);
   bg.save(); bg.translate(g.cx, g.cy);
   const atmosphere = bg.createRadialGradient(0, 0, g.r * .995, 0, 0, g.r * (1 + SHELL_HEIGHT + .025));
-  atmosphere.addColorStop(0, '#6ba5e666'); atmosphere.addColorStop(.38, '#477cbe32'); atmosphere.addColorStop(.78, '#3d74b916'); atmosphere.addColorStop(1, '#163a7100');
+  atmosphere.addColorStop(0, '#6ba5e6b3'); atmosphere.addColorStop(.38, '#477cbe80'); atmosphere.addColorStop(.78, '#3d74b94d'); atmosphere.addColorStop(1, '#163a7100');
   bg.fillStyle = atmosphere; bg.beginPath(); bg.arc(0, 0, g.r * (1 + SHELL_HEIGHT + .025), 0, 2 * Math.PI); bg.fill();
-  bg.strokeStyle = '#5486b844'; bg.lineWidth = 1; bg.beginPath(); bg.arc(0, 0, g.r * (1 + SHELL_HEIGHT), 0, 2 * Math.PI); bg.stroke();
+  bg.strokeStyle = '#75a8dc88'; bg.lineWidth = 1; bg.beginPath(); bg.arc(0, 0, g.r * (1 + SHELL_HEIGHT), 0, 2 * Math.PI); bg.stroke();
   // A quiet dashed guide makes the concentric constraint visible.
   bg.strokeStyle = '#65738936'; bg.setLineDash([2, 7]); bg.beginPath();
   bg.arc(0, 0, g.orbit, -Math.PI / 2 - sun.limit, -Math.PI / 2 + sun.limit); bg.stroke(); bg.setLineDash([]);
@@ -106,15 +103,6 @@ function drawSky() {
   skyCanvas.width = Math.max(1, Math.round(skyCanvas.clientWidth * 2));
   skyCanvas.height = Math.max(1, Math.round(skyCanvas.clientHeight * 2));
   const w = skyCanvas.width, h = skyCanvas.height;
-  if (state.mode === 'direct') {
-    skyCtx.fillStyle = '#020509'; skyCtx.fillRect(0, 0, w, h);
-    const color = displayRGB(directLight(sun).rgb);
-    skyCtx.fillStyle = `rgb(${color.join(',')})`;
-    skyCtx.shadowColor = skyCtx.fillStyle; skyCtx.shadowBlur = 16;
-    skyCtx.beginPath(); skyCtx.arc(w / 2, h / 2, h * .25, 0, Math.PI * 2); skyCtx.fill(); skyCtx.shadowBlur = 0;
-    skyCanvas.setAttribute('aria-label', `散乱せず直接届く太陽光の模式図。太陽の高度は${Math.round(sun.altitude*180/Math.PI)}度`);
-    return;
-  }
   // View covers the horizon through 90° overhead, facing the Sun's side.
   for (let y = 0; y < h; y++) {
     const e = (1 - y / h) * Math.PI / 2;
@@ -136,7 +124,7 @@ function emit() {
 }
 
 function simulate(dt) {
-  const g=geometry, speed=0.8;
+  const g=geometry, speed=0.4;
   const topLeft = screenToWorld(camera, { x: 0, y: 0 });
   const bottomRight = screenToWorld(camera, { x: g.w, y: g.h });
   const bounds = { left: Math.min(0, topLeft.x)-20, top: Math.min(0, topLeft.y)-20,
@@ -154,7 +142,7 @@ function simulate(dt) {
     if(outer){
       const enter=Math.max(0,outer[0]), leave=Math.min(distance,outer[1]);
       const airDistance=Math.max(0,leave-enter);
-      if(airDistance && Math.random()<scatterProbability(p.color,airDistance)){
+      if(airDistance && Math.random()<particleScatterProbability(p.color,airDistance)){
         const at=enter+Math.random()*airDistance;
         p.x+=p.dx*at;p.y+=p.dy*at;
         const angle=Math.atan2(p.dy,p.dx)+scatterAngle();p.dx=Math.cos(angle);p.dy=Math.sin(angle);p.scattered=true;
@@ -208,8 +196,6 @@ function frame(time){
   animation=requestAnimationFrame(frame);
 }
 
-function setMode(mode){state.mode=mode;['sky','direct'].forEach(name=>{$(`${name}-mode`).classList.toggle('selected',name===mode);$(`${name}-mode`).setAttribute('aria-pressed',name===mode);});updateSun();}
-$('sky-mode').addEventListener('click',()=>setMode('sky'));$('direct-mode').addEventListener('click',()=>setMode('direct'));
 function setObserverView(visible, restoreFocus = false) {
   state.viewVisible = visible;
   $('observer-view').hidden = !visible;
